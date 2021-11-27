@@ -239,7 +239,8 @@ for i in range(iterations) :
     [X_test, Y_test, W_test] = test
     data_shape = X_train.shape[1:]
 
-
+    # new comment i am adding to the code 
+    
     # trim_data_val = trim_seq(raw_val_data,INPUT_SIZE)
     # trim_data_seq_val = trim_data_val[0].stack()
     # data_val = np.array(list(map(onehot_encoding, trim_data_seq_val)))
