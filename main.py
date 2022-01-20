@@ -29,33 +29,38 @@ backround = cv2.cvtColor(backround, cv2.COLOR_BGR2GRAY)
 
 
 
-def boundingbox(frame,backround_img):
+def boundingbox(frame,backround_img,users=2,factor=0.1):
 
     diff = cv2.absdiff(frame, backround_img)      # subtract the frame from the original backround
     # gray = cv2.cvtColor(diff, cv2.COLOR_BGR2GRAY) # Covert to gray scale
-    blur = cv2.GaussianBlur(diff, (5, 5), 0.5)    # Gaussian filter
-    thresh = cv2.threshold(blur, 50, 200, cv2.THRESH_OTSU + cv2.THRESH_BINARY)[1] # Binary Thershold using otsu
-
+    blur = cv2.GaussianBlur(diff, (5, 5), 0.8)    # Gaussian filter
+    thresh = cv2.threshold(blur,50,255,cv2.THRESH_BINARY)[1] # Binary Thershold using otsu
     # Applying Morphological transformations
     kernel = np.ones((7, 7), np.uint8)
     thresh = cv2.dilate(thresh, kernel, iterations=1)
     kernel = np.ones((5, 5), np.uint8)
     thresh = cv2.morphologyEx(thresh, cv2.MORPH_CLOSE, kernel)
+    # cv2.imshow('BB', thresh)
+    # cv2.waitKey(0)
     #Finding the bounderys of the image
-    cnts = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-    cnts = cnts[0] if len(cnts) == 2 else cnts[1]
+    contours = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    contours = contours[0]
+
+    #cnts = cnts[0] if len(cnts) == 2 else cnts[1]
     ROI_number = 0
     h_max = 0
-
-    for c in cnts:
+    BBs = []
+    for c in contours:
         x, y, w, h = cv2.boundingRect(c)
-        # ROI = frame[y:y + h, x:x + w]
-        # cv2.imwrite('ROI_{}.png'.format(ROI_number), ROI)
-        if h > h_max: # TODO change to area
-            x_max, y_max, w_max, h_max = x, y, w, h
-    cv2.rectangle(frame, (x_max - 15, y_max - 15), (x_max + w_max + 30, y_max + h_max + 30), (36, 255, 12), 5)
-
-    return [x_max, y_max, w_max, h_max] , thresh
+        bb_area = w*h
+        x=int(x-factor*w); y=int(y-factor*h); w=int(w+factor*w); h=int(h+factor*h)
+        tup_of_bb = ([x,y,x+w,y+h],bb_area)
+        BBs.append(tup_of_bb)
+    BBs = sorted(BBs, key=lambda tup: tup[1])
+    Top_users_bbs = BBs[-users:]
+    BBs = sorted(Top_users_bbs, key=lambda tup: tup[0][0])
+    BBs = [elem[0] for elem in BBs]
+    return BBs
 
 def ROI(img,BB):
     x,y,w,h = BB
